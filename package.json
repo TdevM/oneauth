@@ -36,7 +36,7 @@
     "connect-ensure-login": "^0.1.1",
     "connect-session-sequelize": "^5.2.1",
     "csurf": "^1.9.0",
-    "datadog-tracer": "^0.3.4",
+    "datadog-tracer": "^0.4.2",
     "debug": "^3.1.0",
     "express": "^4.15.3",
     "express-flash": "^0.0.2",

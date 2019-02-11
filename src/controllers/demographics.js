@@ -72,6 +72,14 @@ function upsertDemographic(id, userId, collegeId, branchId) {
   return models.Demographic.upsert({ id, userId, collegeId, branchId });
 }
 
+function findStatesByCountry(countryId){
+  return models.State.findAll({
+    where:{
+      countryId:countryId
+    }
+  })
+}
+
 module.exports = {
   findOrCreateDemographic,
   updateAddressbyDemoId,
@@ -84,5 +92,6 @@ module.exports = {
   findAllCountries,
   findAllBranches,
   findAllColleges,
-  upsertDemographic
+  upsertDemographic,
+  findStatesByCountry
 };

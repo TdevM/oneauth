@@ -5,7 +5,7 @@ const Raven = require('raven')
 const {
     findAddress,
     findAllAddresses,
-    findAllStates,
+    findStatesByCountry,
     findAllCountries
 } = require('../../controllers/demographics');
 
@@ -47,7 +47,7 @@ router.get('/:id',
     cel.ensureLoggedIn('/login'),
     async function (req, res, next) {
         try {
-            const address = await findAddress(req.params.id,req.user.id );
+            const address = await findAddress(req.params.id, req.user.id);
             if (!address) {
                 req.flash('error', 'Address not found')
                 return res.redirect('.')
@@ -66,16 +66,17 @@ router.get('/:id/edit',
     cel.ensureLoggedIn('/login'),
     async function (req, res, next) {
         try {
-            const [address, states, countries] = await Promise.all([
-                findAddress(req.params.id,req.user.id ),
-                findAllStates(),
+            const [address, countries] = await Promise.all([
+                findAddress(req.params.id, req.user.id),
                 findAllCountries()
             ])
+
             if (!address) {
                 req.flash('error', 'Address not found')
                 return res.redirect('.')
             }
-            return res.render('address/edit', {address, states, countries})
+            const statesByCountry = await findStatesByCountry(address.get('country').id)
+            return res.render('address/edit', {address, statesByCountry, countries})
         } catch (err) {
             Raven.captureException(err)
             req.flash('error', 'Something went wrong trying to query address database')

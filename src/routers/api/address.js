@@ -83,7 +83,7 @@ router.post('/', cel.ensureLoggedIn('/login'), async function (req, res) {
 })
 
 router.post('/:id', cel.ensureLoggedIn('/login'), async function (req, res) {
-    if (hasNull(req.body, ['first_name', 'last_name', 'number', 'email', 'pincode', 'street_address', 'landmark', 'city', 'stateId', 'countryId', 'dial_code'])) {
+    if (hasNull(req.body, ['first_name', 'last_name', 'number', 'email', 'pincode', 'street_address', 'landmark', 'city', 'countryId', 'dial_code'])) {
         return res.send(400)
     }
     let addrId = parseInt(req.params.id)
@@ -102,7 +102,7 @@ router.post('/:id', cel.ensureLoggedIn('/login'), async function (req, res) {
                 await updateAddressbyDemoId(demoId, {primary: false})
             }
 
-            let number = req.body.dial_code + req.body.mobile_number
+            let number = req.body.dial_code + req.body.number
             if (!validateNumber(parseNumberByCountry(number, req.body.countryId))) {
                 req.flash('error', 'This number does not exist in your country.')
                 return res.redirect('/address/add')
@@ -118,7 +118,7 @@ router.post('/:id', cel.ensureLoggedIn('/login'), async function (req, res) {
                 street_address: req.body.street_address,
                 landmark: req.body.landmark,
                 city: req.body.city,
-                stateId: req.body.stateId,
+                stateId: req.body.stateId || null,
                 countryId: req.body.countryId,
                 dial_code: req.body.dial_code,
                 whatsapp_number: req.body.whatsapp_number || null,

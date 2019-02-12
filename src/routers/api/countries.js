@@ -11,7 +11,7 @@ const {
 } = require('../../controllers/demographics')
 
 
-router.get('/:id/states', cel.ensureLoggedIn('/login'),
+router.get('/:id/states',
     async function(req, res) {
         try {
             let countryId = req.params.id

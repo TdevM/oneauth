@@ -6,7 +6,8 @@ const {
     findAddress,
     findAllAddresses,
     findStatesByCountry,
-    findAllCountries
+    findAllCountries,
+    findAllStates
 } = require('../../controllers/demographics');
 
 router.get('/',

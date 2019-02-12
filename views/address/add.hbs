@@ -87,7 +87,7 @@
                     <div class="row no-gutters align-items-center justify-content-between detail-row">
                         <div class="label-input col-md-4 col-sm-3">State</div>
 
-                        <select id="state-option" name="stateId" required class="input-text col-md-8 col-sm-8">
+                        <select id="state-option" name="stateId" class="input-text col-md-8 col-sm-8">
 
                         </select>
                     </div>
@@ -169,7 +169,7 @@
                                 .text(value.name));
                     });
                 }else {
-                    console.log("No states for your country")
+                    state_option.empty();
                 }
 
             });

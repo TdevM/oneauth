@@ -14,8 +14,8 @@ const {
 } = require('../../controllers/demographics')
 
 router.post('/', cel.ensureLoggedIn('/login'), async function (req, res) {
-    if (hasNull(req.body, ['first_name', 'last_name', 'number', 'email', 'pincode', 'street_address', 'landmark', 'city', 'stateId', 'countryId', 'dial_code'])) {
-        res.send(400)
+    if (hasNull(req.body, ['first_name', 'last_name', 'number', 'email', 'pincode', 'street_address', 'landmark', 'city', 'countryId', 'dial_code'])) {
+        res.sendStatus(400)
     } else {
         let returnTo = false
         if (req.query && req.query.returnTo) {
@@ -53,7 +53,7 @@ router.post('/', cel.ensureLoggedIn('/login'), async function (req, res) {
                 street_address: req.body.street_address,
                 landmark: req.body.landmark,
                 city: req.body.city,
-                stateId: req.body.stateId,
+                stateId: req.body.stateId || null,
                 countryId: req.body.countryId,
                 dial_code: req.body.dial_code,
                 demographicId: demographics.id,

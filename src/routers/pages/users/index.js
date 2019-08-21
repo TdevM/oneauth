@@ -6,6 +6,8 @@ const cel = require('connect-ensure-login')
 const router = require('express').Router()
 const models = require('../../../db/models').models
 const acl = require('../../../middlewares/acl')
+const { eventUserCreated, eventUserUpdated } = require('../../../controllers/event/users')
+
 
 const {
     findUserById,
@@ -94,7 +96,8 @@ router.post('/:id/edit',
                 referralCode: referral_code,
                 role: req.body.role !== 'unchanged' ? req.body.role : undefined
             })
-            return res.redirect('../' + req.params.id);
+          eventUserUpdated(req.params.id).catch(Raven.captureException)
+          return res.redirect('../' + req.params.id);
         } catch (err) {
             Raven.captureException(err)
             req.flash('error','Could not update User')

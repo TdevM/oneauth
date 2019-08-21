@@ -29,6 +29,10 @@ function sendEvent(subscriptions, model, type, id, userId) {
           id,
           userId
         },
+        headers: {
+          'clientId': client.get().id,
+          'secret': client.get().secret
+        },
         json: true
       })
     }

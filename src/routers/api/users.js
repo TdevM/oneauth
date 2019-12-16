@@ -8,13 +8,13 @@ const passport = require('../../passport/passporthandler')
 const models = require('../../db/models').models
 const makeGaEvent = require('../../utils/ga').makeGaEvent
 const Raven = require('raven');
-const { findUserById , findUserForTrustedClient, findAllUsersWithFilter} = require('../../controllers/user');
-const { deleteAuthToken } = require('../../controllers/oauth');
-const  { findAllAddresses } = require('../../controllers/demographics');
+const {findUserById, findUserForTrustedClient, findAllUsersWithFilter} = require('../../controllers/user');
+const {deleteAuthToken} = require('../../controllers/oauth');
+const {findAllAddresses} = require('../../controllers/demographics');
 
 const passutils = require('../../utils/password')
 const mail = require('../../utils/email')
-const {generateReferralCode}  =require('../../utils/referral')
+const {generateReferralCode} = require('../../utils/referral')
 const uid = require('uid2')
 const {upsertDemographic, upsertAddress} = require("../../controllers/demographics");
 const {createAddress} = require("../../controllers/demographics");
@@ -27,33 +27,33 @@ const {
 const {
     createVerifyEmailEntry
 } = require('../../controllers/verify_emails')
-const { parseNumberEntireString, validateNumber } = require('../../utils/mobile_validator')
+const {parseNumberEntireString, validateNumber} = require('../../utils/mobile_validator')
 
 
 router.get('/',
-  passport.authenticate('bearer', {session: false}),
-  async function (req, res) {
-    // Send the user his own object if the token is user scoped
-    if (req.user && !req.authInfo.clientOnly && req.user.id) {
-      if (req.params.id == req.user.id) {
-        return res.send(req.user)
-      }
-    }
+    passport.authenticate('bearer', {session: false}),
+    async function (req, res) {
+        // Send the user his own object if the token is user scoped
+        if (req.user && !req.authInfo.clientOnly && req.user.id) {
+            if (req.params.id == req.user.id) {
+                return res.send(req.user)
+            }
+        }
 
-    let trustedClient = req.client && req.client.trusted
-    try {
-      let users = await findAllUsersWithFilter(trustedClient, req.query);
-      if (!users) {
-        throw new Error("User not found")
-      }
-      if (!Array.isArray(users)) {
-        users = [users]
-      }
-      res.send(users)
-    } catch (error) {
-      res.send('Unknown user or unauthorized request')
+        let trustedClient = req.client && req.client.trusted
+        try {
+            let users = await findAllUsersWithFilter(trustedClient, req.query);
+            if (!users) {
+                throw new Error("User not found")
+            }
+            if (!Array.isArray(users)) {
+                users = [users]
+            }
+            res.send(users)
+        } catch (error) {
+            res.send('Unknown user or unauthorized request')
+        }
     }
-  }
 )
 
 
@@ -69,34 +69,37 @@ router.get('/me',
                 for (let ia of includedAccounts) {
                     switch (ia) {
                         case 'facebook':
-                            includes.push({ model: models.UserFacebook, attributes: {exclude: ["accessToken","refreshToken"]}})
+                            includes.push({
+                                model: models.UserFacebook,
+                                attributes: {exclude: ["accessToken", "refreshToken"]}
+                            })
                             break
                         case 'twitter':
-                            includes.push({ model: models.UserTwitter, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserTwitter, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'github':
-                            includes.push({ model: models.UserGithub, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserGithub, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'google':
-                            includes.push({model: models.UserGoogle, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserGoogle, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'linkedin':
-                            includes.push({model: models.UserLinkedin, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserLinkedin, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'lms':
-                            includes.push({ model: models.UserLms, attributes: {exclude: ["accessToken"]}})
+                            includes.push({model: models.UserLms, attributes: {exclude: ["accessToken"]}})
                             break
                         case 'demographic':
-                            includes.push({ model: models.Demographic, include: [models.College] })
+                            includes.push({model: models.Demographic, include: [models.College]})
                             break
                         case 'organisation':
-                            includes.push({ model: models.Organisation })
+                            includes.push({model: models.Organisation})
                             break
                     }
                 }
             }
             try {
-                const user = await findUserById(req.user.id,includes);
+                const user = await findUserById(req.user.id, includes);
                 if (!user) {
                     throw new Error("User not found")
                 }
@@ -114,36 +117,40 @@ router.get('/me/address',
     passport.authenticate(['bearer', 'session']),
     async function (req, res) {
         if (req.user && req.user.id) {
-            let includes = [{model: models.Demographic,
-            include: [models.Address]
+            let includes = [{
+                model: models.Demographic,
+                include: [models.Address]
             }]
             if (req.query.include) {
                 let includedAccounts = req.query.include.split(',')
                 for (let ia of includedAccounts) {
                     switch (ia) {
                         case 'facebook':
-                            includes.push({ model: models.UserFacebook, attributes: {exclude: ["accessToken","refreshToken"]}})
+                            includes.push({
+                                model: models.UserFacebook,
+                                attributes: {exclude: ["accessToken", "refreshToken"]}
+                            })
                             break
                         case 'twitter':
-                            includes.push({ model: models.UserTwitter, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserTwitter, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'github':
-                            includes.push({ model: models.UserGithub, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserGithub, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'google':
-                            includes.push({model: models.UserGoogle, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserGoogle, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'linkedin':
-                            includes.push({model: models.UserLinkedin, attributes: {exclude: ["token","tokenSecret"]}})
+                            includes.push({model: models.UserLinkedin, attributes: {exclude: ["token", "tokenSecret"]}})
                             break
                         case 'lms':
-                            includes.push({ model: models.UserLms, attributes: {exclude: ["accessToken"]}})
+                            includes.push({model: models.UserLms, attributes: {exclude: ["accessToken"]}})
                             break
                     }
                 }
             }
             try {
-                const user = await findUserById(req.user.id,includes);
+                const user = await findUserById(req.user.id, includes);
                 if (!user) {
                     throw new Error("User not found")
                 }
@@ -201,8 +208,9 @@ router.get('/:id/address',
     // Only for server-to-server calls, no session auth
     passport.authenticate('bearer', {session: false}),
     async function (req, res) {
-        let includes = [{model: models.Demographic,
-            include: [{model: models.Address, include:[models.State, models.Country]}]
+        let includes = [{
+            model: models.Demographic,
+            include: [{model: models.Address, include: [models.State, models.Country]}]
         }]
 
         if (!req.authInfo.clientOnly) {
@@ -238,7 +246,7 @@ router.post('/add',
 
         if (hasNull(req.body, ['firstname', 'lastname', 'mobile_number', 'email', 'pincode', 'street_address', 'landmark', 'city', 'stateId',
             'countryId', 'dial_code', 'whatsapp_number', 'gender'])) {
-            res.status(400).json({error:'Missing required params'})
+            res.status(400).json({error: 'Missing required params'})
         }
 
         try {
@@ -247,9 +255,9 @@ router.post('/add',
                 return res.status(400).json({error: 'Username already exists. Please try again.'})
             }
 
-            if(!(validateNumber(parseNumberEntireString(
+            if (!(validateNumber(parseNumberEntireString(
                 req.body.dial_code + '-' + req.body.mobile_number
-            )))){
+            )))) {
                 return res.status(400).json({error: 'Please provide a Valid Contact Number.'})
             }
 
@@ -283,7 +291,7 @@ router.post('/add',
                 first_name: req.body.firstname,
                 last_name: req.body.lastname,
                 mobile_number: req.body.mobile_number,
-                email:  req.body.email.toLowerCase(),
+                email: req.body.email.toLowerCase(),
                 pincode: req.body.pincode,
                 street_address: req.body.street_address,
                 landmark: req.body.landmark,
@@ -326,7 +334,7 @@ router.post('/add',
             return res.status(400).json({error: 'Unsuccessful registration. Please try again.'})
         }
 
-})
+    })
 
 
 router.post('/edit',
@@ -335,16 +343,16 @@ router.post('/edit',
     async function (req, res, next) {
 
         // Check if update body has null params
-        if (hasNull(req.body, ['oneauthId' ,'firstname', 'lastname', 'mobile_number', 'pincode', 'street_address', 'landmark', 'city', 'stateId',
+        if (hasNull(req.body, ['oneauthId', 'firstname', 'lastname', 'mobile_number', 'pincode', 'street_address', 'landmark', 'city', 'stateId',
             'countryId', 'dial_code', 'whatsapp_number'])) {
-            res.status(400).json({error:'Missing required params'})
+            res.status(400).json({error: 'Missing required params'})
         }
 
         // Find resource (user) with id
-        const user = await findUserById(req.body.oneauthId, [{model: models.Demographic, include: [models.Address] }])
+        const user = await findUserById(req.body.oneauthId, [{model: models.Demographic, include: [models.Address]}])
 
 
-        if(!user){
+        if (!user) {
             return res.status(404).json({error: 'Resource to be updated not found.'})
         }
 
@@ -366,13 +374,11 @@ router.post('/edit',
 
         const userWithVerifiedNumber = await findUserByParams({verifiedmobile: `${req.body.dial_code}-${req.body.mobile_number}`})
 
-        console.log('user with Mobilenumber', JSON.parse(JSON.stringify(userWithVerifiedNumber)))
 
         // Check if mobile number to be updated, is verified with any other account
-        if(userWithVerifiedNumber && user.get().id !== userWithVerifiedNumber.get().id){
+        if (userWithVerifiedNumber && user.get().id !== userWithVerifiedNumber.get().id) {
             return res.status(400).json({error: `${req.body.mobile_number} is already associated with coding blocks account ${userWithVerifiedNumber.get().id}`})
         }
-
 
         try {
             // user might have demographic, if not make empty
@@ -389,14 +395,13 @@ router.post('/edit',
             }
 
             // If mobile is verified and there is a change on update, update mobile_number, set verifiedmobile = null
-            if(user.verifiedmobile && user.verifiedmobile!==req.body.dial_code + '-' + req.body.mobile_number){
+            if (user.verifiedmobile && user.verifiedmobile !== req.body.dial_code + '-' + req.body.mobile_number) {
                 user.mobile_number = req.body.dial_code + '-' + req.body.mobile_number
                 user.verifiedmobile = null
                 // If mobile is verified and there no change on update, just update mobile_number
-            }else if(user.verifiedmobile && user.verifiedmobile ===req.body.dial_code + '-' + req.body.mobile_number){
+            } else if (user.verifiedmobile && user.verifiedmobile === req.body.dial_code + '-' + req.body.mobile_number) {
                 user.mobile_number = req.body.dial_code + '-' + req.body.mobile_number
-            }
-            else{
+            } else {
                 //If mobile is not verified, update mobile_number and set verifiedmobile = null
                 user.mobile_number = req.body.dial_code + '-' + req.body.mobile_number
                 user.verifiedmobile = null
@@ -432,22 +437,23 @@ router.post('/edit',
                 first_name: req.body.firstname,
                 last_name: req.body.lastname,
                 mobile_number: req.body.mobile_number,
-                email:  req.body.addressEmail? req.body.addressEmail.toLowerCase() : updatedUserDemographics.get().email,
+                email: req.body.addressEmail ? req.body.addressEmail.toLowerCase() : updatedUserDemographics.get().email,
                 pincode: req.body.pincode,
                 street_address: req.body.street_address,
                 landmark: req.body.landmark,
                 city: req.body.city,
                 stateId: req.body.stateId,
                 countryId: req.body.countryId,
-                demographicId: updatedUserDemographics.get().demographic.id,
                 dial_code: req.body.dial_code,
                 whatsapp_number: req.body.whatsapp_number || null,
                 // if no addresses, then first one added is primary
                 primary: true
             }
 
-            if( req.body.address_id ){
+            if (req.body.address_id) {
                 addressOptions.id = req.body.address_id
+            } else {
+                addressOptions.demographicId = updatedUserDemographics.get().demographic.id
             }
 
             const updatedAddress = upsertAddress(addressOptions)
@@ -470,7 +476,7 @@ router.post(
         try {
             if (!req.body.email || req.body.email.trim() === '') {
                 req.flash('error', 'Email cannot be empty')
-                return res.status(400).json({error:' Email cannot be empty'})
+                return res.status(400).json({error: ' Email cannot be empty'})
             }
             let user = await findUserByParams({
                 verifiedemail: req.body.email
@@ -480,11 +486,11 @@ router.post(
                 return next()
             } else {
                 // Email already verified, take person to profile page
-                return res.status(400).json({error:'Email already verified with codingblocks account ID:' + user.get('id')})
+                return res.status(400).json({error: 'Email already verified with codingblocks account ID:' + user.get('id')})
             }
         } catch (err) {
             Raven.captureException(err)
-            return res.status(400).json({error:'Something went wrong. Please try again with your registered email.'})
+            return res.status(400).json({error: 'Something went wrong. Please try again with your registered email.'})
         }
     },
     async (req, res) => {
@@ -495,16 +501,16 @@ router.post(
             })
             if (!user) {
                 // No user with this email
-                return res.status(400).json({error:'This email is not registered with this codingblocks account.'})
+                return res.status(400).json({error: 'This email is not registered with this codingblocks account.'})
             }
             await createVerifyEmailEntry(user, true,
-                req.body.returnTo? req.body.returnTo: null
+                req.body.returnTo ? req.body.returnTo : null
             )
-            return res.status(200).json({success:'Verification email sent'})
+            return res.status(200).json({success: 'Verification email sent'})
 
         } catch (err) {
             Raven.captureException(err)
-            return res.status(400).json({error:'Something went wrong. Please try again with your registered email.'})
+            return res.status(400).json({error: 'Something went wrong. Please try again with your registered email.'})
         }
     }
 )

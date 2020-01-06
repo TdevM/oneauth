@@ -88,6 +88,19 @@ server.exchange(oauth.exchange.code(
     }
 ))
 
+/**
+ * Oauth2 Password grant type to send access_token using resource owner's credentials.
+ * To be used only if client have a backend to store its client_secret and authenticates via it.
+ */
+
+server.exchange(oauth.exchange.password(async (client, username, password, done) => {
+    // try username:password auth with these
+    // and also try phone(=username):otp(=password)
+    // if either matches, generate auth token
+    // call done(null, authToken)
+
+}))
+
 //TODO: Implement all the other types of tokens and grants !
 
 const authorizationMiddleware = [

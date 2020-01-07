@@ -16,7 +16,7 @@ const {findUserByParams} = require('../../controllers/user')
 const {validateUsername} = require('../../utils/username_validator')
 const debug = require('debug')('oauth_using_otp:routes:api:top')
 
-router.post('/', passport.authenticate('oauth2-client-password', {session: false}), async function (req, res, next) {
+router.post('/', passport.authenticate(['basic', 'oauth2-client-password'], {session: false}), async function (req, res, next) {
 
     try {
         const mobileCountry = await models.Country.findOne({
@@ -43,11 +43,6 @@ router.post('/', passport.authenticate('oauth2-client-password', {session: false
         })
 
         createAndSendOTP(user.mobile_number, key, 'accessing your Coding Blocks Account')
-            .then(function (body) {
-                debug(body)
-            }).catch(function (error) {
-            throw new Error(error)
-        })
         res.status(204).send()
     } catch (error) {
         Raven.captureException(error)

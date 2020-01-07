@@ -1,5 +1,6 @@
-const passutils = require("../utils/password");
-const models = require('../db/models').models;
+const Raven = require('raven')
+const passutils = require("../utils/password")
+const models = require('../db/models').models
 
 
 const isValidOtpForUser = async (user, otp) => {
@@ -23,6 +24,7 @@ const isValidOtpForUser = async (user, otp) => {
             return false
         }
     }).catch((err) => {
+        Raven.captureException(err)
         return false
     })
 }

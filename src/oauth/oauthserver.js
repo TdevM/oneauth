@@ -104,52 +104,51 @@ server.exchange(oauth.exchange.code(
 server.exchange(oauth.exchange.password(async (client, username, password, done) => {
     try {
 
-        const [userLocals, userMobile] = await Promise.all([
-            models.UserLocal.findAll({
-                include: [
-                    {
-                        model: models.User,
-                        where: {
-                            [Sequelize.Op.or]: [
-                                {username: username},
-                                {email: username}// allow login via verified email too
-                            ]
-                        }
-                    }
-                ],
+        const [user, userMobile] = await Promise.all([
+            models.User.findOne({
+                where: {
+                    [Sequelize.Op.or]: [
+                        {username: username},
+                        {verifiedemail: username}// allow login via verified email too
+                    ]
+                },
+                include: {
+                    model: models.UserLocal
+                }
             }),
             findUserByParams({verifiedmobile: username})
         ])
 
-        if (!userLocals.length && !userMobile) {
+        // user -> user with either this username or this verifiedemail
+        // userMobile -> user with this verifiedmobile as username
+        if (!user && !userMobile) {
             return done(null, false)
         }
-        if (userLocals.length) {
-            const userLocal = userLocals.find(userLocal => userLocal.user.verifiedemail) || userLocals[0]
 
-            if (!userLocal.user.verifiedemail && userLocal.user.username !== username) {
-                createVerifyEmailEntry(userLocal.user, true, '/users/me')
-                return done(null, false)
-            }
+        if (user) {
+            // logging in with (email or username) and password
 
-            const valid = await isValidPasswordForUser(userLocal, password)
+            // check for password match
+            const valid = await isValidPasswordForUser(user.userlocal, password)
 
             if (!valid) {
+                // wrong pass
                 return done(null, false)
             }
-            const token = await createAuthToken(client.id, userLocal.user.get().id)
+
+
+            const token = await createAuthToken(client.id, user.get().id)
             return done(null, token.get().token)
 
         } else if (userMobile) {
-
+            // trying to login using mobile
             const valid = await isValidOtpForUser(userMobile, password)
+
             if (!valid) {
                 return done(null, false)
             }
             const token = await createAuthToken(client.id, userMobile.get().id)
             return done(null, token.get().token)
-        } else {
-            return done(null, false)
         }
 
     } catch (e) {

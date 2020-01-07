@@ -1,6 +1,12 @@
 /**
  * Created by championswimmer on 10/03/17.
  */
+const {createVerifyEmailEntry} = require("../controllers/verify_emails");
+const passutils = require("../utils/password");
+const {findUserByParams} = require("../controllers/user");
+const models = require('../db/models').models;
+const Sequelize = require('sequelize');
+
 const oauth = require('oauth2orize')
     , cel = require('connect-ensure-login')
     , passport = require('../passport/passporthandler')
@@ -38,7 +44,7 @@ server.grant(oauth.grant.code(
     async function (client, redirectURL, user, ares, done) {
         debug('oauth: getting grant code for ' + client.id + ' and ' + user.id)
         try {
-            const grantCode = await createGrantCode(client.id,user.id);
+            const grantCode = await createGrantCode(client.id, user.id);
             return done(null, grantCode.code);
         } catch (error) {
             return done(error)
@@ -51,7 +57,7 @@ server.grant(oauth.grant.code(
 server.grant(oauth.grant.token(
     async function (client, user, ares, done) {
         try {
-            const authToken = await createAuthToken(client.id,user.id);
+            const authToken = await createAuthToken(client.id, user.id);
             return done(null, authToken.token);
         } catch (error) {
             return done(error)
@@ -67,17 +73,17 @@ server.exchange(oauth.exchange.code(
         try {
             const grantCode = await findGrantCode(code)
             if (!grantCode) {
-                return done(null,false) // Grant code does not exist
+                return done(null, false) // Grant code does not exist
             }
             if (client.id !== grantCode.client.id) {
-                return done(null,false) //Wrong Client ID
+                return done(null, false) //Wrong Client ID
             }
             let callbackMatch = false
             for (let url of client.callbackURL) {
                 if (redirectURI.startsWith(url)) callbackMatch = true
             }
             if (!callbackMatch) {
-                return done(null,false) // Wrong redirect URI
+                return done(null, false) // Wrong redirect URI
             }
             const [authToken /*, created */] = await findOrCreateAuthToken(grantCode)
             grantCode.destroy()
@@ -94,10 +100,85 @@ server.exchange(oauth.exchange.code(
  */
 
 server.exchange(oauth.exchange.password(async (client, username, password, done) => {
-    // try username:password auth with these
-    // and also try phone(=username):otp(=password)
-    // if either matches, generate auth token
-    // call done(null, authToken)
+    try {
+
+        Promise.all([
+            models.UserLocal.findAll({
+                include: [
+                    {
+                        model: models.User,
+                        where: {
+                            [Sequelize.Op.or]: [
+                                {username: username},
+                                {email: username}// allow login via verified email too
+                            ]
+                        }
+                    }
+                ],
+            }),
+            findUserByParams({verifiedmobile: username})
+        ]).then(([userLocals, userMobile]) => {
+            if (!userLocals.length && !userMobile) {
+                return done(null, false)
+            }
+            if (userLocals.length) {
+                const userLocal = userLocals.find(userLocal => userLocal.user.verifiedemail) || userLocals[0]
+
+                if (!userLocal.user.verifiedemail && userLocal.user.username !== username) {
+                    createVerifyEmailEntry(userLocal.user, true, '/users/me')
+                    return done(null, false)
+                }
+
+                passutils.compare2hash(password, userLocal.password).then((match) => {
+                    if (match) {
+                        createAuthToken(client.id, userLocal.user.get().id).then((token) => {
+                            return done(null, token.get().token)
+                        })
+                    } else {
+                        return done(null, false)
+                    }
+                }).catch((err) => {
+                    return done(null, false)
+                })
+
+            } else if (userMobile) {
+
+                models.UserMobileOTP.findOne({
+                    where: {
+                        mobile_number: username,
+                    },
+                    order: [['createdAt', 'DESC']]
+                }).then((lastLoginOTP) => {
+                    if (!lastLoginOTP) {
+                        return done(null, false)
+                    }
+                    if (lastLoginOTP.get('login_otp') === password && !new Date(lastLoginOTP.dataValues.createdAt).getTime() < (new Date().getTime() - 10 * 60 * 1000)) {
+
+                        lastLoginOTP.update({
+                            used_at: new Date()
+                        }).then(() => {
+                            return createAuthToken(client.id, userMobile.get().id)
+                        }).then((authToken) => {
+                            return done(null, authToken.get().token)
+                        })
+
+                    } else {
+                        return done(null, false);
+                    }
+                }).catch((err) => {
+                    return done(null, false)
+                })
+
+            } else {
+                return done(null, false)
+            }
+
+        }).catch((e) => {
+            throw new Error(e)
+        })
+    } catch (e) {
+        return done(e)
+    }
 
 }))
 
@@ -125,7 +206,7 @@ const authorizationMiddleware = [
             return done(null, true)
         }
         try {
-            const authToken = await findAuthToken(client.id,user.id)
+            const authToken = await findAuthToken(client.id, user.id)
             if (!authToken) {
                 return done(null, false)
             } else {
@@ -170,7 +251,7 @@ server.exchange(oauth.exchange.clientCredentials(async (client, scope, done) => 
         // Everything validated, return the token
         // const token = generator.genNcharAlphaNum(config.AUTH_TOKEN_SIZE)
         const authToken = await createAuthToken(client.get().id)
-        return done(null,authToken.get().token)
+        return done(null, authToken.get().token)
     } catch (error) {
         debug(error)
     }

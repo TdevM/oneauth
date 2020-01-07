@@ -21,6 +21,8 @@ const {
 } = require('../controllers/oauth');
 const {findClientById} = require('../controllers/clients');
 
+const {isValidPasswordForUser, isValidOtpForUser} = require('../passport/helpers')
+
 const server = oauth.createServer()
 
 server.serializeClient(function (client, done) {
@@ -95,14 +97,14 @@ server.exchange(oauth.exchange.code(
 ))
 
 /**
- * Oauth2 Password grant type to send access_token using resource owner's credentials.
+ * Oauth2 Password grant type to issue access_token using resource owner's credentials.
  * To be used only if client have a backend to store its client_secret and authenticates via it.
  */
 
 server.exchange(oauth.exchange.password(async (client, username, password, done) => {
     try {
 
-        Promise.all([
+        const [userLocals, userMobile] = await Promise.all([
             models.UserLocal.findAll({
                 include: [
                     {
@@ -117,65 +119,39 @@ server.exchange(oauth.exchange.password(async (client, username, password, done)
                 ],
             }),
             findUserByParams({verifiedmobile: username})
-        ]).then(([userLocals, userMobile]) => {
-            if (!userLocals.length && !userMobile) {
-                return done(null, false)
-            }
-            if (userLocals.length) {
-                const userLocal = userLocals.find(userLocal => userLocal.user.verifiedemail) || userLocals[0]
+        ])
 
-                if (!userLocal.user.verifiedemail && userLocal.user.username !== username) {
-                    createVerifyEmailEntry(userLocal.user, true, '/users/me')
-                    return done(null, false)
-                }
+        if (!userLocals.length && !userMobile) {
+            return done(null, false)
+        }
+        if (userLocals.length) {
+            const userLocal = userLocals.find(userLocal => userLocal.user.verifiedemail) || userLocals[0]
 
-                passutils.compare2hash(password, userLocal.password).then((match) => {
-                    if (match) {
-                        createAuthToken(client.id, userLocal.user.get().id).then((token) => {
-                            return done(null, token.get().token)
-                        })
-                    } else {
-                        return done(null, false)
-                    }
-                }).catch((err) => {
-                    return done(null, false)
-                })
-
-            } else if (userMobile) {
-
-                models.UserMobileOTP.findOne({
-                    where: {
-                        mobile_number: username,
-                    },
-                    order: [['createdAt', 'DESC']]
-                }).then((lastLoginOTP) => {
-                    if (!lastLoginOTP) {
-                        return done(null, false)
-                    }
-                    if (lastLoginOTP.get('login_otp') === password && !new Date(lastLoginOTP.dataValues.createdAt).getTime() < (new Date().getTime() - 10 * 60 * 1000)) {
-
-                        lastLoginOTP.update({
-                            used_at: new Date()
-                        }).then(() => {
-                            return createAuthToken(client.id, userMobile.get().id)
-                        }).then((authToken) => {
-                            return done(null, authToken.get().token)
-                        })
-
-                    } else {
-                        return done(null, false);
-                    }
-                }).catch((err) => {
-                    return done(null, false)
-                })
-
-            } else {
+            if (!userLocal.user.verifiedemail && userLocal.user.username !== username) {
+                createVerifyEmailEntry(userLocal.user, true, '/users/me')
                 return done(null, false)
             }
 
-        }).catch((e) => {
-            throw new Error(e)
-        })
+            const valid = await isValidPasswordForUser(userLocal, password)
+
+            if (!valid) {
+                return done(null, false)
+            }
+            const token = await createAuthToken(client.id, userLocal.user.get().id)
+            return done(null, token.get().token)
+
+        } else if (userMobile) {
+
+            const valid = await isValidOtpForUser(userMobile, password)
+            if (!valid) {
+                return done(null, false)
+            }
+            const token = await createAuthToken(client.id, userMobile.get().id)
+            return done(null, token.get().token)
+        } else {
+            return done(null, false)
+        }
+
     } catch (e) {
         return done(e)
     }

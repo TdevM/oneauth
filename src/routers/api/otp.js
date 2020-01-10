@@ -42,7 +42,7 @@ router.post('/', passport.authenticate(['basic', 'oauth2-client-password'], {ses
             clientId: req.user.id
         })
 
-        createAndSendOTP(user.mobile_number, key, 'accessing your Coding Blocks Account', req.user.androidOTPHash)
+        await createAndSendOTP(user.mobile_number, key, 'accessing your Coding Blocks Account', req.user.androidOTPHash)
         res.status(204).send()
     } catch (error) {
         Raven.captureException(error)

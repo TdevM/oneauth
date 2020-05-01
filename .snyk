@@ -1,0 +1,26 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.14.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-567746:
+    - express-hbs > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - express-winston > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - le_node > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - sequelize > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - winston-graylog2 > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - args > string-similarity > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - newrelic > async > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - node-sass > sass-graph > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - hbs > handlebars > async > lodash:
+        patched: '2020-05-01T06:02:15.383Z'
+    - node-sass > gaze > globule > lodash:
+        patched: '2020-05-01T06:02:15.383Z'

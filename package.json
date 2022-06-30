@@ -57,7 +57,7 @@
     "newrelic": "^5.9.1",
     "node-sass": "^4.9.3",
     "oauth2orize": "^1.11.0",
-    "passport": "^0.4.0",
+    "passport": "^0.6.0",
     "passport-custom": "^1.0.5",
     "passport-discord": "^0.1.4",
     "passport-facebook": "^2.1.1",

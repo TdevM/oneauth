@@ -74,7 +74,7 @@
     "pg-hstore": "^2.3.2",
     "proxy-addr": "^2.0.3",
     "raven": "^2.3.0",
-    "request": "^2.84.0",
+    "request": "^2.88.2",
     "request-ip": "^2.0.2",
     "sequelize": "^4.38.0",
     "uid2": "^0.0.3",
